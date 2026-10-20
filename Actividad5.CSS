@@ -1,0 +1,65 @@
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    background-color: #f8f9fa;
+}
+
+/* Contenedor principal y barra lateral simulada en Color Tinto */
+.sidebar {
+    background-color: #6b1d2f; /* Color tinto */
+    color: white;
+    padding: 20px;
+}
+
+/* Tarjetas y Contenedores de Formulario */
+.form-container {
+    background: #ffffff;
+    padding: 25px;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+/* Mensaje de Error dinámico */
+.alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+/* Estilos para Tablas */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #dee2e6;
+}
+
+th {
+    background-color: #ffffff;
+    color: #6b1d2f; /* Texto de cabecera en tinto para combinar */
+    font-weight: bold;
+}
+
+/* Estilo de cebra para filas de tablas */
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+/* Efectos interactivos con Pseudoclases */
+button:hover {
+    opacity: 0.9;
+}
+
+.nav-item:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}

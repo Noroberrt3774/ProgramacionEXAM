@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gestión de Productos - Tienda Departamental</title>
+    <link rel="stylesheet" href="Actividad5.css">
+</head>
+<body>
+
+    <div style="display: flex; min-height: 100vh;">
+        <!-- Barra Lateral -->
+        <div class="sidebar" style="width: 250px;">
+            <h2>Segunda</h2>
+            <div class="nav-item" style="padding: 10px; border-radius: 4px; margin-top: 20px; cursor: pointer;">
+                📋 Productos
+            </div>
+        </div>
+
+        <!-- Contenido Principal -->
+        <div style="flex-grow: 1; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #dee2e6; padding-bottom: 10px;">
+                <h1>Productos</h1>
+                <span style="color: #007bff; cursor: pointer;">About</span>
+            </div>
+
+            <!-- Contenedor del Formulario -->
+            <div class="form-container" style="margin-top: 20px;">
+                <!-- Mensaje de error (Oculto por defecto) -->
+                <div id="mensajeError" class="alert-error" style="display: none;">
+                    El número de inventario se encuentra registrado. Debe ser único.
+                </div>
+
+                <form id="formProducto" onsubmit="guardarProducto(event)">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: inline-block; width: 120px;">Inventario</label>
+                        <input type="number" id="txtInventario" min="1" value="0" required style="padding: 6px; width: 300px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: inline-block; width: 120px;">Nombre</label>
+                        <input type="text" id="txtNombre" required style="padding: 6px; width: 300px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: inline-block; width: 120px;">Departamento</label>
+                        <label style="margin-right: 15px;"><input type="radio" name="dep" value="Frutas" checked> Frutas</label>
+                        <label style="margin-right: 15px;"><input type="radio" name="dep" value="Verduras"> Verduras</label>
+                        <label><input type="radio" name="dep" value="Lácteos"> Lácteos</label>
+                    </div>
+
+                    <div id="contenedorBotones">
+                        <button type="submit" id="btnGuardar" style="background-color: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Guardar</button>
+                    </div>
+                </form>
+
+                <div style="margin-top: 10px;">
+                    <button onclick="cambiarVistaExistencias()" id="btnExistencias" style="background-color: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Existencias</button>
+                </div>
+            </div>
+            
+
+            <!-- Vista de Listado de Productos -->
+            <div id="vistaListado">
+                <h3>Listado de productos</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Inventario</th>
+                            <th>Nombre</th>
+                            <th>Departamento</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaProductosBody">
+                        <!-- Los registros se cargan dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Vista de Existencias (Oculta inicialmente) -->
+            <div id="vistaExistencias" style="display: none;">
+                <h3>Concentrado de Existencias por Departamento</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Departamento</th>
+                            <th>Total de Productos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaExistenciasBody">
+                        <tr><td>Frutas</td><td id="countFrutas">0</td></tr>
+                        <tr><td>Verduras</td><td id="countVerduras">0</td></tr>
+                        <tr><td>Lácteos</td><td id="countLacteos">0</td></tr>
+                    </tbody>
+                </table>
+                <br>
+                <button onclick="cambiarToListado()" style="background-color: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Listado</button>
+            </div>
+        </div>
+    </div>
+
+    
+    <script>
+        let productos = [
+            { inventario: 1, nombre: "Producto UNO", departamento: "Frutas" }
+        ];
+        let modoEdicion = false;
+        let inventarioEditando = null;
+
+        function renderizarTabla() {
+            let tbody = document.getElementById("tablaProductosBody");
+            tbody.innerHTML = "";
+            
+            productos.forEach(p => {
+                let fila = document.createElement("tr");
+                fila.innerHTML = `
+                    <td>${p.inventario}</td>
+                    <td>${p.nombre}</td>
+                    <td>${p.departamento}</td>
+                    <td>
+                        <button onclick="eliminarProducto(${p.inventario})" style="background:none; border:none; cursor:pointer;" title="Eliminar">🗑️</button>
+                        <button onclick="cargarEdicion(${p.inventario})" style="background:none; border:none; cursor:pointer;" title="Editar">✏️</button>
+                    </td>
+                `;
+                tbody.appendChild(fila);
+            });
+            actualizarExistencias();
+        }
+
+        function guardarProducto(event) {
+            event.preventDefault();
+            let invVal = parseInt(document.getElementById("txtInventario").value);
+            let nomVal = document.getElementById("txtNombre").value.trim();
+            let depVal = document.querySelector('input[name="dep"]:checked').value;
+            let errorDiv = document.getElementById("mensajeError");
+
+            if (nomVal === "") return;
+
+            if (!modoEdicion) {
+                // Validar duplicados
+                let existe = productos.some(p => p.inventario === invVal);
+                if (existe) {
+                    errorDiv.style.display = "block";
+                    return;
+                } else {
+                    errorDiv.style.display = "none";
+                }
+                productos.push({ inventario: invVal, nombre: nomVal, departamento: depVal });
+            } else {
+                // Actualizar registro
+                let p = productos.find(item => item.inventario === inventarioEditando);
+                p.nombre = nomVal;
+                p.departamento = depVal;
+                
+                // Restaurar botones de formulario
+                modoEdicion = false;
+                inventarioEditando = null;
+                document.getElementById("txtInventario").disabled = false;
+                document.getElementById("contenedorBotones").innerHTML = `<button type="submit" id="btnGuardar" style="background-color: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Guardar</button>`;
+                errorDiv.style.display = "none";
+            }
+
+            document.getElementById("formProducto").reset();
+            document.getElementById("txtInventario").value = "0";
+            renderizarTabla();
+        }
+
+        function eliminarProducto(inv) {
+            productos = productos.filter(p => p.inventario !== inv);
+            renderizarTabla();
+        }
+
+        function cargarEdicion(inv) {
+            let p = productos.find(item => item.inventario === inv);
+            if (!p) return;
+
+            document.getElementById("txtInventario").value = p.inventario;
+            document.getElementById("txtInventario").disabled = true;
+            document.getElementById("txtNombre").value = p.nombre;
+            
+            let radios = document.querySelectorAll('input[name="dep"]');
+            radios.forEach(r => {
+                if (r.value === p.departamento) r.checked = true;
+            });
+
+            modoEdicion = true;
+            inventarioEditando = inv;
+            document.getElementById("mensajeError").style.display = "none";
+
+            // Cambiar botones a Actualizar y Cancelar
+            document.getElementById("contenedorBotones").innerHTML = `
+                <button type="submit" style="background-color: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Actualizar</button>
+                <button type="button" onclick="cancelarEdicion()" style="background-color: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-left: 10px;">Cancelar</button>
+            `;
+        }
+
+        function cancelarEdicion() {
+            modoEdicion = false;
+            inventarioEditando = null;
+            document.getElementById("txtInventario").disabled = false;
+            document.getElementById("formProducto").reset();
+            document.getElementById("txtInventario").value = "0";
+            document.getElementById("mensajeError").style.display = "none";
+            document.getElementById("contenedorBotones").innerHTML = `<button type="submit" id="btnGuardar" style="background-color: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Guardar</button>`;
+        }
+
+        function cambiarVistaExistencias() {
+            document.getElementById("vistaListado").style.display = "none";
+            document.getElementById("vistaExistencias").style.display = "block";
+            actualizarExistencias();
+        }
+
+        function cambiarToListado() {
+            document.getElementById("vistaExistencias").style.display = "none";
+            document.getElementById("vistaListado").style.display = "block";
+        }
+
+        function actualizarExistencias() {
+            let cFrutas = productos.filter(p => p.departamento === "Frutas").length;
+            let cVerduras = productos.filter(p => p.departamento === "Verduras").length;
+            let cLacteos = productos.filter(p => p.departamento === "Lácteos").length;
+
+            document.getElementById("countFrutas").innerText = cFrutas;
+            document.getElementById("countVerduras").innerText = cVerduras;
+            document.getElementById("countLacteos").innerText = cLacteos;
+        }
+
+        // Inicializar tabla al cargar
+        window.onload = function() {
+            renderizarTabla();
+        };
+    </script>
+</body>
+</html>
